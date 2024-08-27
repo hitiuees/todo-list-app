@@ -54,6 +54,7 @@ const AddTask = (props: Props) => {
             required
             placeholder="Please add a task" // Replaced defaultValue with placeholder
           />
+         
           {/* Button to submit the task */}
           <Button
             onClick={handlesubmit}
