@@ -1,47 +1,71 @@
 import { Paper } from "@mui/material";
 import { CheckCircleOutline, Close } from '@mui/icons-material';
-import { Data } from "./datatasks";
+import { Data } from "./datatasks"; // Import the Data interface
 import Button from '@mui/material/Button';
-import { Dispatch, useEffect } from "react";
+import { Dispatch } from "react";
 
+// Define the Props interface for Tasklist component
 interface Props {
-    taskslist: Data[];
-    settaskslist: Dispatch<React.SetStateAction<Data[]>>;
+    tasklist: Data[]; // Array of tasks (Data type)
+    settaskslist: Dispatch<React.SetStateAction<Data[]>>; // Function to update the tasks list
 }
 
+// Main Tasklist component
 const Tasklist = (props: Props) => {
-    // Function to clear all tasks and reset localStorage
-    const cleantasks = () => {
-        props.settaskslist([]); // Clear tasks list
-        localStorage.clear();   // Clear localStorage
-    }
+    // Function to clear all tasks both locally and on the server
+    const cleantasks = async () => {
+        props.settaskslist([]); // Clear local tasks list
+        const response = await fetch("http://localhost:5000/tasks", {
+            method: 'DELETE', // Send a DELETE request to the server to clear tasks
+        });
+        return response; // Return server response (optional)
+    };
 
-    // useEffect to update localStorage when taskslist changes
-    useEffect(() => {
-        localStorage.setItem('taskslist', JSON.stringify(props.taskslist)); // Store taskslist in localStorage
-    }, [props.taskslist]); // Effect runs when taskslist changes
+    // Function to update task status (mark as completed) on the server
+    const updatetask = async (taskId: string) => {
+        try {
+            const response = await fetch(`http://localhost:5000/tasks/${taskId}`, {
+                method: 'PUT', // Send a PUT request to update task status
+                headers: {
+                    'Content-Type': 'application/json', // Specify the request content type
+                },
+                body: JSON.stringify({ isCompleted: true }), // Update task completion status
+            });
 
-    // Function to toggle task completion by id
+            // Check if the server response is OK
+            if (!response.ok) {
+                throw new Error(`Failed to update task with id: ${taskId}`); // Throw error if update fails
+            }
+
+            const updatedTaskData = await response.json(); // Get updated task data from the response
+            handleToggleCompletion(taskId); // Update task completion status locally
+            return updatedTaskData; // Return updated task data
+        } catch (error) {
+            alert(`Error updating task: ${error}`); // Alert user on error
+            throw error; // Re-throw error for further handling
+        }
+    };
+
+    // Function to toggle task completion locally (UI update)
     const handleToggleCompletion = (taskId: string) => {
-        props.settaskslist(tasks =>
-            tasks.map(task => {
-                if (task.id === taskId) {
-                    const updatedTask = { ...task, isCompleted: true }; // Update task completion status
-                    return updatedTask;
+        props.settaskslist(
+            props.tasklist.map(task => {
+                if (task.taskid === taskId) {
+                    return { ...task, isCompleted: true }; // Mark task as completed
                 }
-                return task; // Return task unchanged if id doesn't match
+                return task; // Return unchanged task if ID doesn't match
             })
         );
     };
 
     return (
         <Paper elevation={3}>
-            {/* Title for tasks list */}
+            {/* Tasks list title */}
             <div className='text-center font-bold p-7 text-2xl text-blue-500'>Tasks list</div>
-            
-            {/* Button to delete all tasks if there are any */}
-            {props.taskslist.length === 0 ? (
-                "" // No delete button if tasklist is empty
+
+            {/* Conditional rendering: Show "Delete All Tasks" button if task list is not empty */}
+            {props.tasklist.length === 0 ? (
+                "" // No button if tasklist is empty
             ) : (
                 <Button
                     onClick={cleantasks} // Call cleantasks function on click
@@ -60,25 +84,25 @@ const Tasklist = (props: Props) => {
                 </Button>
             )}
 
-            {/* Display each task in taskslist */}
-            {props.taskslist.map(task => (
-                <div key={task.id} className="text-center font-semibold p-2 flex flex-row">
-                    <div className="font-bold">{task.id}.</div> {task.content} {/* Display task id and content */}
+            {/* Render each task in the tasks list */}
+            {props.tasklist.map(task => (
+                <div key={task.taskid} className="text-center font-semibold p-2 flex flex-row">
+                    <div className="font-bold">.</div> {task.content} {/* Display task content */}
                     
-                    {/* Show different icons based on task completion status */}
+                    {/* Display different icons based on task completion status */}
                     {task.isCompleted ? (
-                        <CheckCircleOutline style={{ color: 'green' }} /> // Completed task icon
+                        <CheckCircleOutline style={{ color: 'green' }} /> // Green icon for completed tasks
                     ) : (
-                        <Close style={{ color: 'red' }} /> // Incomplete task icon
+                        <Close style={{ color: 'red' }} /> // Red icon for incomplete tasks
                     )}
 
-                    {/* Show "Complete" button if task is not completed */}
+                    {/* Show "Complete" button only if the task is not completed */}
                     {!task.isCompleted && (
                         <Button
-                            data-task-id={task.id} // Set task id as data attribute
+                            data-task-id={task.taskid} // Store task ID in a data attribute
                             onClick={(e) => {
-                                const taskId = e.currentTarget.getAttribute('data-task-id'); // Get task id from attribute
-                                handleToggleCompletion(String(taskId)); // Call handleToggleCompletion with taskId
+                                const taskId = e.currentTarget.getAttribute('data-task-id'); // Get task ID from the clicked button
+                                updatetask(String(taskId)); // Call updatetask function with taskId
                             }}
                             sx={{
                                 marginLeft: '3rem',

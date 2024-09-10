@@ -1,12 +1,10 @@
 export interface Data {
-    id: string;
+   taskid:string;
     content: string;
     isCompleted: boolean;
   }
   
   export const tasks: Data[] = [
-   
-   
-    
+
   ];
   

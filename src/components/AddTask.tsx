@@ -11,7 +11,7 @@ interface Props {
 
 // Initial structure of a task
 const faketask = {
-  id: '2',
+taskid:'',
   content: '',        
   isCompleted: false,
 };
@@ -21,19 +21,28 @@ const AddTask = (props: Props) => {
 
   // Handle input change and update task content
   const handleonchange = (e: ChangeEvent<HTMLInputElement>) => {
-    setutiltask({ ...faketask, content: e.target.value }); // Update content in utiltask
+    setutiltask({ ...faketask, content: e.target.value ,taskid:`${props.taskslist.length +1}`}); // Update content in utiltask
   };
 
   // Handle task submission
-  const handlesubmit = () => {
+  const handlesubmit = async() => {
     if (utiltask.content.trim() !== "") {
       // Update tasks list with new task
-      const updatedarray = [...props.taskslist, { ...utiltask, id: (props.taskslist.length + 1).toString() }];
+      const updatedarray = [...props.taskslist, { ...utiltask, taskid: (props.taskslist.length + 1).toString() }];
       props.settaskslist(updatedarray); // Update tasks state with new task
       console.log(updatedarray);
-      localStorage.setItem('taskslist', JSON.stringify(updatedarray)); // Store updated tasks in localStorage
-      setutiltask(faketask); // Reset input field after submitting
+            const response = await fetch('http://localhost:5000/tasks', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(utiltask) //addeding data to db 
+          })
+          const responsewait=await response
+      setutiltask(faketask); 
+      return responsewait
     }
+   
   };
 
   return (

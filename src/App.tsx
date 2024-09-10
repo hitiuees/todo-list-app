@@ -2,18 +2,22 @@ import './index.css';
 import AddTask from './components/AddTask';
 import Tasklist from './components/Taskslist';
 import { useEffect, useState } from 'react';
-import { tasks } from './components/datatasks';
+import { Data } from './components/datatasks';
+import { fetchtasks } from './api/tasks';
+
 
 function App() {
   // State to manage the list of tasks
-  const [taskslist, settaskslist] = useState(tasks);
+  const [taskslist, settaskslist] = useState<Data[]>([]);
 
-  // useEffect to load saved tasks from localStorage on initial render
+ const gettasks=async()=>{
+     const tasks =await fetchtasks()
+     console.log(tasks)
+     settaskslist(tasks)
+ }
   useEffect(() => {
-    const savedTasks = localStorage.getItem('taskslist'); // Retrieve tasks from localStorage
-    if (savedTasks) {
-      settaskslist(JSON.parse(savedTasks)); // Set taskslist state with parsed localStorage data if available
-    }
+   gettasks()
+   console.log( 'get data')
   }, []);
 
   return (
@@ -28,7 +32,7 @@ function App() {
         {taskslist.length === 0 ? (
           "" // No tasks, so no Tasklist displayed
         ) : (
-          <Tasklist taskslist={taskslist} settaskslist={settaskslist} />
+          <Tasklist tasklist={taskslist} settaskslist={settaskslist} />
         )}
       </div>
     </>
